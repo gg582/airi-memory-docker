@@ -11,7 +11,6 @@ docker run -d \
   -e POSTGRES_DB=postgres \
   --network airi-net \
   -p 5434:5432 \
-  -v "$HOME/airi_memory:/airi_memory:z" \
   ankane/pgvector:latest
 
 echo "Waiting for Postgres to be ready..."
@@ -19,7 +18,13 @@ until docker exec airi-postgres pg_isready -U postgres -d postgres; do
   sleep 0.1
 done
 
-docker exec -i airi-postgres psql -U postgres -d postgres -h localhost -c "CREATE EXTENSION IF NOT EXISTS vector;"
+echo "Creating 'vector' extension..."
+docker exec -i -e PGPASSWORD=airi_memory_password airi-postgres \
+psql -U postgres -d postgres -h airi-postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+echo "Dumping database to a backup file..."
+docker exec -i -e PGPASSWORD=airi_memory_password airi-postgres \
+pg_dump -U postgres -d postgres > "$HOME/airi_memory/embedded_pg_backup.sql"
 
 ARCH=$(arch)
 if [ "$ARCH" = "ia64" ]; then
@@ -36,5 +41,5 @@ docker run -d \
   -e DATABASE_URL="postgres://postgres:airi_memory_password@airi-postgres:5432/postgres" \
   --network airi-net \
   -v "$HOME/airi_memory:/airi_memory:z" \
+  --user $(id -u):$(id -g) \
   gg582/airi-memory-service:$ARCH-0.7.2-beta.3
-
