@@ -37,4 +37,4 @@ docker run -d `
     -p 3001:3001 `
     -e DATABASE_URL="postgres://postgres:airi_memory_password@airi-postgres:5432/postgres" `
     --network airi-net `
-    gg582/airi-memory-service:0.7.2-beta.3
+    gg582/airi-memory-service:$ARCH-0.7.2-beta.3
