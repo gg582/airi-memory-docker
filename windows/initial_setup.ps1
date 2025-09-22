@@ -3,7 +3,8 @@ if (-not (docker network ls --filter name=airi-net -q)) {
     docker network create airi-net
 }
 
-# Run Postgres container
+# Run Postgres container with a named volume for persistence
+docker volume create airi_db_volume | Out-Null
 docker run -d `
     --name airi-postgres `
     -e POSTGRES_USER=postgres `
@@ -11,6 +12,7 @@ docker run -d `
     -e POSTGRES_DB=postgres `
     --network airi-net `
     -p 5434:5432 `
+    -v airi_db_volume:/var/lib/postgresql/data `
     ankane/pgvector:latest
 
 Write-Host "Waiting for Postgres to be ready..."
@@ -21,7 +23,9 @@ do {
 } until ($ready -match "accepting connections")
 
 # Install vector extension
-docker exec -i airi-postgres psql -U postgres -d postgres -h 127.0.0.1 -c "CREATE EXTENSION IF NOT EXISTS vector;"
+docker exec -i `
+    -e PGPASSWORD=airi_memory_password `
+    airi-postgres psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 # Determine the architecture
 $ARCH = (docker info --format "{{.Architecture}}")
