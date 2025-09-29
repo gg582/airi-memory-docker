@@ -21,8 +21,9 @@ docker run -d \
   ankane/pgvector:latest
 
 echo "Waiting for Postgres to be ready..."
-until docker exec airi-postgres pg_isready -U postgres -d postgres >/dev/null 2>&1; do
-  sleep 0.1
+until nc -z localhost 5434; do
+  printf '.'
+  sleep 1
 done
 
 echo "Creating 'vector' extension..."
